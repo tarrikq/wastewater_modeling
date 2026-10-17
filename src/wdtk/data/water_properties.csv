@@ -1,0 +1,13 @@
+# source: Journal of Physical and Chemical Reference Data 7, 941 (1978); https://doi.org/10.1063/1.555581 (citation supplied by project author)
+# derived from data/raw/Properties_of_Water_at_Various_Temperatures.csv by scripts/build_water_properties.py
+# temperature_c = (degF - 32) * 5/9; kinematic_viscosity_m2s = cSt * 1e-6
+temperature_c,density_kgm3,kinematic_viscosity_m2s
+0.0,999.87477,1.7919e-06
+4.444444444444445,1000.034955,1.5486e-06
+10.0,999.714585,1.3081e-06
+15.555555555555555,999.073845,1.1218e-06
+21.11111111111111,997.95255,0.9757e-06
+26.666666666666668,996.67107,0.8594e-06
+32.22222222222222,995.06922,0.765e-06
+37.77777777777778,993.147,0.6868e-06
+43.333333333333336,990.58404,0.6208e-06
