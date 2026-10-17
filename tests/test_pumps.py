@@ -70,7 +70,9 @@ def test_curve_rejects_nonpositive_coefficients() -> None:
 @given(q=st.floats(0.0, 0.22))
 def test_pump_flow_inverts_pump_head(q: float) -> None:
     c = pm.fit_three_point(60.0, 0.10, 45.0, 0.22)
-    assert pm.pump_flow_m3s(c, pm.pump_head_m(c, q)) == pytest.approx(q, rel=1e-9, abs=1e-12)
+    # Near shutoff, H = a - bQ^c equals a to double precision (cancellation), so Q cannot be
+    # recovered below ~1e-8 m3/s (1e-5 L/s); that is far below any meaningful flow.
+    assert pm.pump_flow_m3s(c, pm.pump_head_m(c, q)) == pytest.approx(q, rel=1e-9, abs=1e-8)
 
 
 def test_pump_flow_is_zero_above_shutoff(curve: pm.PumpCurve) -> None:

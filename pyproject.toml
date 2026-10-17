@@ -7,6 +7,8 @@ requires-python = ">=3.11"
 dependencies = [
     "matplotlib>=3.8",
     "numpy>=1.26",
+    "pandas>=2.0",
+    "pyyaml>=6.0",
     "scipy>=1.11",
     "wntr>=1.5.0",
 ]
@@ -44,9 +46,10 @@ strict = true
 files = ["src"]
 python_version = "3.11"
 
-# scipy and networkx ship without type information; stub packages would be extra dependencies.
+# scipy, networkx, wntr, pyyaml and pandas ship without type information; stub packages would be
+# extra dependencies.
 [[tool.mypy.overrides]]
-module = ["scipy", "scipy.*", "networkx", "networkx.*"]
+module = ["scipy", "scipy.*", "networkx", "networkx.*", "wntr", "wntr.*", "yaml", "pandas", "pandas.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

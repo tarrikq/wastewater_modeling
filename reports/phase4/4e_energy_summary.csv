@@ -1,0 +1,5 @@
+scenario,pump,energy_kwh,cost,on_peak_fraction,average_price_per_kwh,run_hours
+baseline,10,2606.405,227.15,0.214,0.087,42.0
+baseline,335,5883.547,411.848,0.0,0.07,19.0
+alternative,10,2677.31,187.412,0.0,0.07,43.0
+alternative,335,5571.458,736.48,0.777,0.132,18.0

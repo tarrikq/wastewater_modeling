@@ -1,0 +1,301 @@
+{
+  "4a_baseline": {
+    "junctions_checked_min": 59,
+    "junctions_below_min": 0,
+    "junctions_above_max": 0,
+    "pipes_above_max_velocity": 3,
+    "lowest_service_pressure_psi": 38.7,
+    "highest_pressure_psi": 75.5,
+    "highest_velocity_fps": 9.37,
+    "peak_hour_h": 23.0
+  },
+  "4b_fire_flow": {
+    "junctions_tested": 59,
+    "junctions_meeting_requirement": 57
+  },
+  "4c_sizing": {
+    "fire_deficient_before": 2,
+    "fire_deficient_after": 0,
+    "pipes_upsized": 2,
+    "total_cost_usd": 1189500.0,
+    "final_deficit_ft": 0.0,
+    "iterations": 6
+  },
+  "4d_water_age": {
+    "junctions_above_threshold_baseline": 20,
+    "junctions_above_threshold_alternative": 17,
+    "max_age_h_baseline": 161.4,
+    "max_age_h_alternative": 221.1,
+    "junctions_older_by_1h_or_more": 33,
+    "junctions_younger_by_1h_or_more": 25,
+    "tank_max_age_h": {
+      "baseline": {
+        "1": 122.0,
+        "2": 163.4,
+        "3": 139.0
+      },
+      "alternative": {
+        "1": 126.4,
+        "2": 230.4,
+        "3": 166.6
+      }
+    },
+    "age_stabilization": {
+      "baseline": 0.0256,
+      "alternative": 0.0474
+    }
+  },
+  "4e_energy": {
+    "baseline_cost_usd": 639.0,
+    "alternative_cost_usd": 923.89,
+    "saving_pct": -44.6,
+    "baseline_energy_kwh": 8490.0,
+    "alternative_energy_kwh": 8249.0,
+    "feasibility": {
+      "baseline": {
+        "junctions_below_min": 0,
+        "tank_hours_at_min_level": 0
+      },
+      "alternative": {
+        "junctions_below_min": 0,
+        "tank_hours_at_min_level": 0
+      }
+    },
+    "alternative_feasible": true,
+    "period_h": 72.0
+  },
+  "4f_criticality": {
+    "pipes_screened": 87,
+    "excluded_control_targets": [
+      "330"
+    ],
+    "top10": [
+      "233",
+      "193",
+      "229",
+      "189",
+      "247",
+      "249",
+      "137",
+      "251",
+      "257",
+      "263"
+    ]
+  },
+  "runtime_s": {
+    "4a_baseline": 0.3,
+    "4b_fire_flow": 0.3,
+    "4c_sizing": 0.5,
+    "4d_water_age": 0.3,
+    "4e_energy": 0.1,
+    "4f_criticality": 0.4
+  },
+  "assumptions": {
+    "service.min_pressure": {
+      "value": 35,
+      "units": "psi",
+      "status": "supplied"
+    },
+    "service.max_pressure": {
+      "value": 100,
+      "units": "psi",
+      "status": "supplied"
+    },
+    "service.max_velocity": {
+      "value": 5.0,
+      "units": "ft/s",
+      "status": "supplied"
+    },
+    "pressure_dependent_demand.minimum_pressure": {
+      "value": 0,
+      "units": "psi",
+      "status": "supplied"
+    },
+    "pressure_dependent_demand.required_pressure": {
+      "value": 20,
+      "units": "psi",
+      "status": "supplied"
+    },
+    "fire_flow.residual_pressure": {
+      "value": 20,
+      "units": "psi",
+      "status": "supplied"
+    },
+    "fire_flow.required_flow": {
+      "value": 1500,
+      "units": "gpm",
+      "status": "supplied"
+    },
+    "fire_flow.search_upper_bound": {
+      "value": 6000,
+      "units": "gpm",
+      "status": "supplied"
+    },
+    "fire_flow.search_tolerance": {
+      "value": 10,
+      "units": "gpm",
+      "status": "supplied"
+    },
+    "sizing.nominal_diameters": {
+      "value": [
+        6,
+        8,
+        10,
+        12,
+        16,
+        20,
+        24,
+        30,
+        36,
+        42,
+        48,
+        54,
+        60
+      ],
+      "units": "in",
+      "status": "supplied"
+    },
+    "sizing.unit_cost": {
+      "value": {
+        "6": 150,
+        "8": 175,
+        "10": 200,
+        "12": 225,
+        "16": 300,
+        "20": 375,
+        "24": 450,
+        "30": 575,
+        "36": 700,
+        "42": 850,
+        "48": 1000,
+        "54": 1150,
+        "60": 1300
+      },
+      "units": "$/ft",
+      "status": "supplied"
+    },
+    "sizing.contingency": {
+      "value": 0.3,
+      "units": "-",
+      "status": "supplied"
+    },
+    "sizing.candidate_hops": {
+      "value": 2,
+      "units": "-",
+      "status": "supplied"
+    },
+    "sizing.max_iterations": {
+      "value": 25,
+      "units": "-",
+      "status": "supplied"
+    },
+    "water_age.concern_threshold": {
+      "value": 72,
+      "units": "h",
+      "status": "supplied"
+    },
+    "water_age.simulation_duration": {
+      "value": 336,
+      "units": "h",
+      "status": "supplied"
+    },
+    "water_age.report_window": {
+      "value": 24,
+      "units": "h",
+      "status": "supplied"
+    },
+    "water_age.alternative_pump10_start": {
+      "value": 20,
+      "units": "h of day",
+      "status": "supplied"
+    },
+    "energy.on_peak_hours": {
+      "value": [
+        12,
+        20
+      ],
+      "units": "h of day [start, end)",
+      "status": "supplied"
+    },
+    "energy.on_peak_price": {
+      "value": 0.15,
+      "units": "$/kWh",
+      "status": "supplied"
+    },
+    "energy.off_peak_price": {
+      "value": 0.07,
+      "units": "$/kWh",
+      "status": "supplied"
+    },
+    "energy.pump_efficiency": {
+      "value": 0.75,
+      "units": "-",
+      "status": "net3"
+    },
+    "energy.alternative_pump10_start": {
+      "value": 20,
+      "units": "h of day",
+      "status": "supplied"
+    },
+    "criticality.min_diameter": {
+      "value": 12,
+      "units": "in",
+      "status": "supplied"
+    },
+    "criticality.duration": {
+      "value": 24,
+      "units": "h",
+      "status": "supplied"
+    },
+    "network.source": {
+      "value": "wntr/library/networks/Net3.inp (WNTR 1.5.0)",
+      "units": "-",
+      "status": "net3"
+    },
+    "demand.peak_hour": {
+      "value": "from Net3 demand patterns",
+      "units": "-",
+      "status": "net3"
+    },
+    "fire_flow.eligible_junctions": {
+      "value": "base demand > 0",
+      "units": "-",
+      "status": "supplied"
+    },
+    "fire_flow.scenario": {
+      "value": "steady state at max-day demand, tanks at initial levels, pumps at t = 0 status",
+      "units": "-",
+      "status": "supplied"
+    },
+    "pipes.dw_roughness": {
+      "value": 0.1,
+      "units": "mm",
+      "status": "supplied"
+    },
+    "demand.max_day_factor": {
+      "value": 1.5,
+      "units": "-",
+      "status": "supplied"
+    },
+    "eps.duration": {
+      "value": 72,
+      "units": "h",
+      "status": "supplied"
+    },
+    "pumps.atmospheric_pressure": {
+      "value": 14.4,
+      "units": "psi",
+      "status": "supplied"
+    },
+    "pumps.npsh_ratio_min": {
+      "value": 1.0,
+      "units": "-",
+      "status": "supplied"
+    },
+    "pumps.npsh_ratio_max": {
+      "value": 1.3,
+      "units": "-",
+      "status": "supplied"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+tank,scenario,mean_volume_kgal,turnover_days,level_range_ft,max_age_h
+1,baseline,741.46,2.92,3.6,121.96
+2,baseline,351.13,2.96,6.93,163.43
+3,baseline,5293.59,4.78,4.74,139.0
+1,alternative,810.63,2.99,4.32,126.43
+2,alternative,372.29,3.27,4.51,230.36
+3,alternative,5115.44,6.45,2.98,166.56

@@ -1,0 +1,109 @@
+# Phase 4 design and resilience study assumptions (EPANET Net3).
+#
+# EVERY VALUE IN THIS FILE IS AN ASSUMPTION FOR DEMONSTRATION, NOT A DESIGN STANDARD.
+# Each entry records:
+#   value / units  - as used by wdtk.analysis (converted to SI internally via wdtk.units)
+#   basis          - the type of source such a value normally comes from
+#   status         - supplied : given by the project author
+#                    net3     : read from the Net3 model itself
+#                    draft    : proposed for review; must be confirmed before results are reported
+#
+# Review checklist: confirm or replace every `status: draft` entry, then change it to
+# `status: supplied`. wdtk.run_study refuses to run (except --dry-run) while any draft remains.
+
+network:
+  source: {value: "wntr/library/networks/Net3.inp (WNTR 1.5.0)", units: "-", basis: "EPANET example network", status: net3}
+
+service:
+  min_pressure:
+    {value: 35, units: psi, basis: "State design standards / Ten States Standards normal working pressure", status: supplied}
+  max_pressure:
+    {value: 100, units: psi, basis: "State design standards; plumbing code PRV threshold", status: supplied}
+  max_velocity:
+    {value: 5.0, units: ft/s, basis: "Utility master-plan criterion at peak hour (AWWA M32 practice)", status: supplied}
+
+pressure_dependent_demand:
+  minimum_pressure:
+    {value: 0, units: psi, basis: "Modeling convention: no delivery at zero pressure", status: supplied}
+  required_pressure:
+    {value: 20, units: psi, basis: "Minimum pressure under all conditions (state design standards)", status: supplied}
+
+demand:
+  max_day_factor:
+    {value: 1.5, units: "-", basis: "Utility billing / production records (typical 1.3-2.0)", status: supplied}
+  peak_hour:
+    {value: "from Net3 demand patterns", units: "-", basis: "Hour of highest system demand in the baseline EPS", status: net3}
+
+eps:
+  duration:
+    {value: 72, units: h, basis: "PLAN.md Phase 4a", status: supplied}
+
+fire_flow:
+  residual_pressure:
+    {value: 20, units: psi, basis: "Local fire code / AWWA M31 minimum residual", status: supplied}
+  required_flow:
+    {value: 1500, units: gpm, basis: "Local fire code / ISO needed fire flow, typical single-family residential", status: supplied}
+  eligible_junctions:
+    {value: "base demand > 0", units: "-", basis: "Assumes every demand junction represents a hydrant location", status: supplied}
+  search_upper_bound:
+    {value: 6000, units: gpm, basis: "Search limit for the bisection, not a criterion", status: supplied}
+  search_tolerance:
+    {value: 10, units: gpm, basis: "Numerical tolerance of the bisection", status: supplied}
+  scenario:
+    {value: "steady state at max-day demand, tanks at initial levels, pumps at t = 0 status", units: "-", basis: "Common master-plan fire flow condition", status: supplied}
+
+sizing:
+  nominal_diameters:
+    {value: [6, 8, 10, 12, 16, 20, 24, 30, 36, 42, 48, 54, 60], units: in, basis: "Commercial ductile iron pressure pipe sizes", status: supplied}
+  unit_cost:
+    # Planning-level installed cost per foot by nominal diameter (in -> $/ft). Illustrative.
+    value: {6: 150, 8: 175, 10: 200, 12: 225, 16: 300, 20: 375, 24: 450, 30: 575, 36: 700, 42: 850, 48: 1000, 54: 1150, 60: 1300}
+    units: "$/ft"
+    basis: "Utility bid tabulations / AACE Class 5 planning estimate"
+    status: supplied
+  contingency:
+    {value: 0.30, units: "-", basis: "AACE Class 5 planning contingency", status: supplied}
+  candidate_hops:
+    {value: 2, units: "-", basis: "Heuristic search radius (links) around deficient junctions", status: supplied}
+  max_iterations:
+    {value: 25, units: "-", basis: "Heuristic iteration cap", status: supplied}
+
+water_age:
+  concern_threshold:
+    {value: 72, units: h, basis: "Utility water quality goal (AWWA / EPA distribution system guidance)", status: supplied}
+  simulation_duration:
+    {value: 336, units: h, basis: "Long enough for tank ages to stabilize (checked in results)", status: supplied}
+  report_window:
+    {value: 24, units: h, basis: "Final day of the simulation", status: supplied}
+  alternative_pump10_start:
+    {value: 20, units: "h of day", basis: "Operational alternative chosen by project author: shift pump 10's 14-hour run to start at 20:00 (same schedule as energy.alternative_pump10_start)", status: supplied}
+
+energy:
+  on_peak_price:
+    {value: 0.15, units: "$/kWh", basis: "Local utility time-of-use tariff", status: supplied}
+  off_peak_price:
+    {value: 0.07, units: "$/kWh", basis: "Local utility time-of-use tariff", status: supplied}
+  on_peak_hours:
+    {value: [12, 20], units: "h of day [start, end)", basis: "Local utility time-of-use tariff", status: supplied}
+  pump_efficiency:
+    {value: 0.75, units: "-", basis: "Net3 global pump efficiency", status: net3}
+  alternative_pump10_start:
+    {value: 20, units: "h of day", basis: "Alternative: start pump 10's 14-hour run at 20:00 (mostly off-peak)", status: supplied}
+
+criticality:
+  min_diameter:
+    {value: 12, units: in, basis: "Screen transmission and large distribution mains only", status: supplied}
+  duration:
+    {value: 24, units: h, basis: "One demand cycle with the main out of service", status: supplied}
+
+pumps:
+  atmospheric_pressure:
+    {value: 14.4, units: psi, basis: "Chicago area (project author)", status: supplied}
+  npsh_ratio_min:
+    {value: 1.0, units: "-", basis: "NPSHa/NPSHr margin, lower end (project author)", status: supplied}
+  npsh_ratio_max:
+    {value: 1.3, units: "-", basis: "NPSHa/NPSHr margin, upper end (project author)", status: supplied}
+
+pipes:
+  dw_roughness:
+    {value: 0.1, units: mm, basis: "Cement-lined ductile iron (project author)", status: supplied}

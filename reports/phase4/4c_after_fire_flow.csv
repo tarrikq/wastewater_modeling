@@ -1,0 +1,60 @@
+junction,available_gpm,required_gpm,deficit_gpm,meets_requirement,governing_limit,limiting_junction
+15,1576.0,1500.0,0.0,True,residual at fire node,15
+35,6000.0,1500.0,0.0,True,search upper bound,
+101,2484.0,1500.0,0.0,True,residual at fire node,101
+103,2467.0,1500.0,0.0,True,residual at fire node,103
+105,3129.0,1500.0,0.0,True,residual elsewhere,101
+107,2906.0,1500.0,0.0,True,residual at fire node,107
+109,2701.0,1500.0,0.0,True,residual elsewhere,103
+111,4225.0,1500.0,0.0,True,residual elsewhere,103
+113,4980.0,1500.0,0.0,True,residual elsewhere,103
+115,4576.0,1500.0,0.0,True,residual elsewhere,103
+117,4881.0,1500.0,0.0,True,residual elsewhere,103
+119,6000.0,1500.0,0.0,True,search upper bound,
+121,6000.0,1500.0,0.0,True,search upper bound,
+123,6000.0,1500.0,0.0,True,search upper bound,
+125,6000.0,1500.0,0.0,True,search upper bound,
+127,6000.0,1500.0,0.0,True,search upper bound,
+131,4236.0,1500.0,0.0,True,residual at fire node,131
+139,1664.0,1500.0,0.0,True,residual at fire node,139
+141,1670.0,1500.0,0.0,True,residual elsewhere,15
+143,1623.0,1500.0,0.0,True,residual elsewhere,15
+145,1852.0,1500.0,0.0,True,residual elsewhere,15
+147,2010.0,1500.0,0.0,True,residual elsewhere,15
+149,2086.0,1500.0,0.0,True,residual elsewhere,15
+151,2467.0,1500.0,0.0,True,residual elsewhere,153
+153,2104.0,1500.0,0.0,True,residual at fire node,153
+157,6000.0,1500.0,0.0,True,search upper bound,
+159,6000.0,1500.0,0.0,True,search upper bound,
+161,6000.0,1500.0,0.0,True,search upper bound,
+163,6000.0,1500.0,0.0,True,search upper bound,
+166,6000.0,1500.0,0.0,True,search upper bound,
+167,6000.0,1500.0,0.0,True,search upper bound,
+171,6000.0,1500.0,0.0,True,search upper bound,
+177,6000.0,1500.0,0.0,True,search upper bound,
+185,6000.0,1500.0,0.0,True,search upper bound,
+189,6000.0,1500.0,0.0,True,search upper bound,
+191,6000.0,1500.0,0.0,True,search upper bound,
+193,6000.0,1500.0,0.0,True,search upper bound,
+197,4676.0,1500.0,0.0,True,residual at fire node,197
+199,6000.0,1500.0,0.0,True,search upper bound,
+201,6000.0,1500.0,0.0,True,search upper bound,
+203,6000.0,1500.0,0.0,True,search upper bound,
+205,6000.0,1500.0,0.0,True,search upper bound,
+207,6000.0,1500.0,0.0,True,search upper bound,
+209,4564.0,1500.0,0.0,True,residual elsewhere,225
+211,4342.0,1500.0,0.0,True,residual elsewhere,225
+213,3990.0,1500.0,0.0,True,residual elsewhere,225
+215,2871.0,1500.0,0.0,True,residual elsewhere,225
+217,2643.0,1500.0,0.0,True,residual elsewhere,225
+219,2326.0,1500.0,0.0,True,residual at fire node,219
+225,2115.0,1500.0,0.0,True,residual at fire node,225
+229,2338.0,1500.0,0.0,True,residual at fire node,229
+231,1934.0,1500.0,0.0,True,residual at fire node,231
+237,3879.0,1500.0,0.0,True,residual elsewhere,251
+239,3680.0,1500.0,0.0,True,residual elsewhere,251
+243,2367.0,1500.0,0.0,True,residual at fire node,243
+247,3621.0,1500.0,0.0,True,residual elsewhere,251
+251,2912.0,1500.0,0.0,True,residual at fire node,251
+253,1887.0,1500.0,0.0,True,residual at fire node,253
+255,3727.0,1500.0,0.0,True,residual elsewhere,253

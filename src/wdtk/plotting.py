@@ -7,11 +7,16 @@ unordered series, a single-hue ramp for ordered series (e.g. pump speeds).
 
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from matplotlib.axes import Axes
+from matplotlib.cm import ScalarMappable
+from matplotlib.collections import LineCollection
+from matplotlib.colors import LinearSegmentedColormap
 
 from wdtk import pumps as pm
 from wdtk.network.results import SolveResult
@@ -190,3 +195,139 @@ def plot_convergence(ax: Axes, results: Sequence[SolveResult], title: str = "") 
     if title:
         ax.set_title(title, fontsize=10, loc="left")
     ax.legend(frameon=False, fontsize=8, title="Solver (iterations)", title_fontsize=8)
+
+
+SEQUENTIAL = ("#cde2fb", "#86b6ef", "#3987e5", "#1c5cab", "#0d366b")
+"""Single-hue sequential ramp (blue, light to dark) for magnitudes on maps."""
+
+
+def network_map(
+    ax: Axes,
+    wn: Any,
+    node_values: pd.Series | None = None,
+    link_values: pd.Series | None = None,
+    *,
+    label: str = "",
+    reverse: bool = False,
+    highlight_links: Sequence[str] = (),
+    highlight_label: str = "",
+    link_labels: Mapping[str, str] | None = None,
+) -> None:
+    """Draw a network map colored by node or link values.
+
+    Links without a value are drawn as thin neutral lines; nodes without a value as small
+    neutral dots. Tanks (squares) and reservoirs (triangles) are labeled. Coordinates are the
+    model's map coordinates (arbitrary units), so axes are hidden.
+
+    Parameters
+    ----------
+    ax : matplotlib Axes
+        Target axes.
+    wn : wntr WaterNetworkModel
+        Network with node coordinates.
+    node_values, link_values : Series, optional
+        Values to color (index: node or link names); give one or both.
+    label : str, optional
+        Colorbar label, with units.
+    reverse : bool, optional
+        Make low values darkest (use when low values are the concern, e.g. pressure).
+    highlight_links : sequence of str, optional
+        Links to overlay in the accent color (e.g. proposed improvements).
+    highlight_label : str, optional
+        Legend label for the highlighted links.
+    link_labels : mapping of str to str, optional
+        Text placed at the midpoint of selected links (direct labels).
+    """
+    colors = SEQUENTIAL[::-1] if reverse else SEQUENTIAL
+    cmap = LinearSegmentedColormap.from_list("seq", colors)
+    xy = {n: tuple(wn.get_node(n).coordinates) for n in wn.node_name_list}
+
+    def segment(link: str) -> list[tuple[float, float]]:
+        lk = wn.get_link(link)
+        return [xy[lk.start_node_name], xy[lk.end_node_name]]
+
+    all_links = list(wn.link_name_list)
+    ax.add_collection(
+        LineCollection([segment(k) for k in all_links], colors=GRID, linewidths=1.0, zorder=1)
+    )
+    mappable: ScalarMappable | None = None
+    if link_values is not None:
+        names = [k for k in link_values.index if k in xy or k in all_links]
+        lc = LineCollection([segment(k) for k in names], cmap=cmap, linewidths=2.2, zorder=2)
+        lc.set_array(np.asarray(link_values.loc[names], dtype=float))
+        ax.add_collection(lc)
+        mappable = lc
+    if highlight_links:
+        ax.add_collection(
+            LineCollection(
+                [segment(k) for k in highlight_links],
+                colors=CATEGORICAL[1],
+                linewidths=3.5,
+                zorder=3,
+                label=highlight_label or None,
+            )
+        )
+    junctions = list(wn.junction_name_list)
+    jx = np.array([xy[n] for n in junctions])
+    if node_values is not None:
+        names = [n for n in node_values.index if n in xy]
+        pts = np.array([xy[n] for n in names])
+        sc = ax.scatter(
+            pts[:, 0],
+            pts[:, 1],
+            c=np.asarray(node_values.loc[names], dtype=float),
+            cmap=cmap,
+            s=30,
+            edgecolors=SURFACE,
+            linewidths=0.6,
+            zorder=4,
+        )
+        mappable = sc
+    else:
+        ax.scatter(jx[:, 0], jx[:, 1], s=6, color=MUTED, zorder=4)
+    for kind, names, marker in (
+        ("Tank", list(wn.tank_name_list), "s"),
+        ("Reservoir", list(wn.reservoir_name_list), "^"),
+    ):
+        for n in names:
+            x, y = xy[n]
+            ax.scatter([x], [y], marker=marker, s=70, color=INK, zorder=5)
+            ax.annotate(
+                f"{kind} {n}",
+                (x, y),
+                xytext=(6, 4),
+                textcoords="offset points",
+                fontsize=7,
+                color=INK_SECONDARY,
+            )
+    for i, (link, text) in enumerate((link_labels or {}).items()):
+        (x0, y0), (x1, y1) = segment(link)
+        # Alternate above / below the midpoint so labels on adjacent short pipes separate.
+        ax.annotate(
+            text,
+            ((x0 + x1) / 2, (y0 + y1) / 2),
+            xytext=(8, 6 if i % 2 == 0 else -14),
+            textcoords="offset points",
+            fontsize=7,
+            color=INK,
+            zorder=6,
+            bbox={
+                "boxstyle": "round,pad=0.15",
+                "facecolor": SURFACE,
+                "edgecolor": "none",
+                "alpha": 0.85,
+            },
+        )
+    if mappable is not None:
+        cb = ax.figure.colorbar(mappable, ax=ax, fraction=0.04, pad=0.02)
+        cb.set_label(label)
+        cb.outline.set_edgecolor(MUTED)
+    if highlight_links and highlight_label:
+        ax.legend(frameon=False, fontsize=8, loc="lower left")
+    ax.autoscale()
+    ax.set_aspect("equal")
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.grid(False)
+    for spine in ax.spines.values():
+        spine.set_visible(False)
