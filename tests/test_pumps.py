@@ -196,3 +196,18 @@ def test_npsh_margin_and_check() -> None:
     assert pm.npsh_check(6.0, 4.5, required_margin_m=1.5)
     assert not pm.npsh_check(6.0, 4.5, required_margin_m=1.6)
     assert not pm.npsh_check(4.0, 4.5)
+
+
+@pytest.mark.parametrize(
+    ("npsha", "npshr", "ratio", "ok"),
+    [(6.0, 5.0, 1.0, True), (6.0, 5.0, 1.2, True), (6.0, 5.0, 1.3, False), (4.9, 5.0, 1.0, False)],
+)
+def test_npsh_ratio_criterion(npsha: float, npshr: float, ratio: float, ok: bool) -> None:
+    assert pm.npsh_ratio(npsha, npshr) == pytest.approx(npsha / npshr, rel=1e-15)
+    assert pm.npsh_check(npsha, npshr, required_ratio=ratio) is ok
+
+
+def test_npsh_check_requires_both_criteria() -> None:
+    # Ratio 6.25/5.0 = 1.25 passes 1.2 in both cases; the 1.25 m margin passes 1.0 m, fails 1.5 m.
+    assert pm.npsh_check(6.25, 5.0, required_ratio=1.2, required_margin_m=1.0)
+    assert not pm.npsh_check(6.25, 5.0, required_ratio=1.2, required_margin_m=1.5)

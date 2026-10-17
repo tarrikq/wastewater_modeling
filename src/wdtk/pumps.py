@@ -580,25 +580,55 @@ def npsh_margin_m(npsh_available_m: float, npsh_required_m: float) -> float:
     return npsh_available_m - npsh_required_m
 
 
-def npsh_check(
-    npsh_available_m: float, npsh_required_m: float, required_margin_m: float = 0.0
-) -> bool:
-    """Check NPSHa >= NPSHr + required margin.
+def npsh_ratio(npsh_available_m: float, npsh_required_m: float) -> float:
+    """NPSH margin ratio, NPSHa / NPSHr.
 
     Parameters
     ----------
     npsh_available_m : float
         NPSH available, m.
     npsh_required_m : float
-        NPSH required at the operating flow, m.
+        NPSH required by the pump at the operating flow (manufacturer data), m. Positive.
+
+    Returns
+    -------
+    float
+        Ratio, dimensionless. Below 1 means cavitation is expected.
+    """
+    _require_positive("npsh_required_m", npsh_required_m)
+    return npsh_available_m / npsh_required_m
+
+
+def npsh_check(
+    npsh_available_m: float,
+    npsh_required_m: float,
+    required_ratio: float = 1.0,
+    required_margin_m: float = 0.0,
+) -> bool:
+    """Check NPSHa against NPSHr with a ratio criterion and an optional absolute margin.
+
+    Passes when NPSHa / NPSHr >= required ratio and NPSHa - NPSHr >= required margin.
+
+    Parameters
+    ----------
+    npsh_available_m : float
+        NPSH available, m.
+    npsh_required_m : float
+        NPSH required at the operating flow, m. Positive.
+    required_ratio : float, optional
+        Minimum NPSHa/NPSHr (default 1.0). A project design criterion; the project author
+        specifies 1.0 to 1.3 depending on the application (to be recorded in
+        ``data/assumptions.yaml``).
     required_margin_m : float, optional
-        Design margin above NPSHr, m (default 0). A project design criterion, not a
-        physical constant.
+        Minimum NPSHa - NPSHr, m (default 0).
 
     Returns
     -------
     bool
-        True if the margin is met.
+        True if both criteria are met.
     """
+    _require_positive("required_ratio", required_ratio)
     _require_nonnegative("required_margin_m", required_margin_m)
-    return npsh_margin_m(npsh_available_m, npsh_required_m) >= required_margin_m
+    ratio_ok = npsh_ratio(npsh_available_m, npsh_required_m) >= required_ratio
+    margin_ok = npsh_margin_m(npsh_available_m, npsh_required_m) >= required_margin_m
+    return ratio_ok and margin_ok

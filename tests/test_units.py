@@ -15,8 +15,13 @@ from wdtk import units
 
 REL = 1e-12
 
-finite = st.floats(
-    min_value=-1e12, max_value=1e12, allow_nan=False, allow_infinity=False, allow_subnormal=False
+# Zero, or magnitudes in [1e-200, 1e12]. Values near the smallest normal float (~2e-308) would
+# underflow to subnormals inside a conversion (e.g. Pa -> ft of head divides by rho*g) and
+# lose precision; no physical quantity in this project is anywhere near that small.
+finite = st.one_of(
+    st.just(0.0),
+    st.floats(min_value=1e-200, max_value=1e12),
+    st.floats(min_value=-1e12, max_value=-1e-200),
 )
 density = st.floats(min_value=900.0, max_value=1100.0)
 
