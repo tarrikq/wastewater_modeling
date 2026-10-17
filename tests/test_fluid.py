@@ -30,13 +30,23 @@ def synth_nu(t: np.ndarray) -> np.ndarray:
     return 1.8e-6 - 5e-8 * t + 6e-10 * t**2 - 2e-12 * t**3
 
 
+def synth_pv(t: np.ndarray) -> np.ndarray:
+    return 0.6 + 0.04 * t + 1e-3 * t**2 + 2e-5 * t**3
+
+
+HEADER = "temperature_c,density_kgm3,kinematic_viscosity_m2s,vapor_pressure_kpa"
+
+
 def synth_csv() -> str:
     lines = [
         "# synthetic test table",
         "# source: closed-form polynomials in tests/test_fluid.py",
-        "temperature_c,density_kgm3,kinematic_viscosity_m2s",
+        HEADER,
     ]
-    lines += [f"{float(t)!r},{float(synth_rho(t))!r},{float(synth_nu(t))!r}" for t in T_NODES]
+    lines += [
+        ",".join(repr(float(x)) for x in (t, synth_rho(t), synth_nu(t), synth_pv(t)))
+        for t in T_NODES
+    ]
     return "\n".join(lines)
 
 
@@ -54,6 +64,7 @@ def test_spline_reproduces_cubic_between_nodes(table: fluid.PropertyTable) -> No
     t = np.linspace(0.0, 40.0, 97)
     np.testing.assert_allclose(fluid.density_kgm3(t, table), synth_rho(t), rtol=1e-12)
     np.testing.assert_allclose(fluid.kinematic_viscosity_m2s(t, table), synth_nu(t), rtol=1e-10)
+    np.testing.assert_allclose(fluid.vapor_pressure_kpa(t, table), synth_pv(t), rtol=1e-12)
 
 
 def test_scalar_in_scalar_out(table: fluid.PropertyTable) -> None:
@@ -84,25 +95,11 @@ def test_array_with_one_bad_value_raises(table: fluid.PropertyTable) -> None:
 @pytest.mark.parametrize(
     ("text", "match"),
     [
-        (
-            "temperature_c,density_kgm3,kinematic_viscosity_m2s\n0,1,1\n1,1,1\n2,1,1\n3,1,1",
-            "source",
-        ),
+        (f"{HEADER}\n0,1,1,1\n1,1,1,1\n2,1,1,1\n3,1,1,1", "source"),
         ("# source: x\ntemperature_c,density_kgm3\n0,1\n1,1\n2,1\n3,1", "missing columns"),
-        (
-            "# source: x\ntemperature_c,density_kgm3,kinematic_viscosity_m2s\n0,1,1\n1,1,1",
-            "at least",
-        ),
-        (
-            "# source: x\ntemperature_c,density_kgm3,kinematic_viscosity_m2s\n"
-            "0,1,1\n2,1,1\n1,1,1\n3,1,1",
-            "strictly increasing",
-        ),
-        (
-            "# source: x\ntemperature_c,density_kgm3,kinematic_viscosity_m2s\n"
-            "0,1,1\n1,1,0\n2,1,1\n3,1,1",
-            "positive",
-        ),
+        (f"# source: x\n{HEADER}\n0,1,1,1\n1,1,1,1", "at least"),
+        (f"# source: x\n{HEADER}\n0,1,1,1\n2,1,1,1\n1,1,1,1\n3,1,1,1", "strictly increasing"),
+        (f"# source: x\n{HEADER}\n0,1,1,1\n1,1,1,0\n2,1,1,1\n3,1,1,1", "positive"),
     ],
 )
 def test_parse_rejects_bad_tables(text: str, match: str) -> None:
@@ -160,3 +157,13 @@ def test_packaged_viscosity_decreases_with_temperature() -> None:
     _packaged_or_skip()
     t = np.linspace(*fluid.VALID_RANGE_C, 4001)
     assert np.all(np.diff(fluid.kinematic_viscosity_m2s(t)) < 0.0)
+
+
+def test_packaged_vapor_pressure_reproduces_rows_and_increases() -> None:
+    tbl = _packaged_or_skip()
+    keep = tbl.temperature_c <= fluid.VALID_RANGE_C[1]
+    np.testing.assert_allclose(
+        fluid.vapor_pressure_kpa(tbl.temperature_c[keep]), tbl.vapor_pressure_kpa[keep], rtol=1e-12
+    )
+    t = np.linspace(*fluid.VALID_RANGE_C, 4001)
+    assert np.all(np.diff(fluid.vapor_pressure_kpa(t)) > 0.0)

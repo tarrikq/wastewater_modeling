@@ -7,6 +7,7 @@ Conversions (all exact):
 * density_kgm3 = Density (kg/m3) column, as given.
 * kinematic_viscosity_m2s = Kinematic Viscosity (cSt) * 1e-6. The cSt column carries more
   significant figures than the raw m2/sec column.
+* vapor_pressure_kpa = Vapor Pressure (PSI Abs) * ``wdtk.units.PSI_PA`` / 1000.
 
 Only rows up to the first temperature at or above the upper end of ``wdtk.fluid.VALID_RANGE_C``
 are kept, so the spline covers the full valid range without extrapolation.
@@ -18,6 +19,7 @@ import csv
 from pathlib import Path
 
 from wdtk.fluid import VALID_RANGE_C
+from wdtk.units import PSI_PA
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "data" / "raw" / "Properties_of_Water_at_Various_Temperatures.csv"
@@ -33,13 +35,18 @@ def main() -> None:
     with RAW.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f))
 
-    # Values are kept as strings so the raw decimal digits pass through unchanged;
-    # cSt -> m2/s is an exact decimal shift, written as an e-06 exponent.
-    out_rows: list[tuple[float, str, str]] = []
+    # Density and viscosity are kept as strings so the raw decimal digits pass through
+    # unchanged; cSt -> m2/s is an exact decimal shift, written as an e-06 exponent.
+    out_rows: list[tuple[float, str, str, float]] = []
     for r in rows:
         t_c = (float(r["Temp (°F)"]) - 32.0) * 5.0 / 9.0
         out_rows.append(
-            (t_c, r["Density (kg/m3)"].strip(), f"{r['Kinematic Viscosity (cSt)'].strip()}e-06")
+            (
+                t_c,
+                r["Density (kg/m3)"].strip(),
+                f"{r['Kinematic Viscosity (cSt)'].strip()}e-06",
+                float(r["Vapor Pressure (PSI Abs)"]) * PSI_PA / 1000.0,
+            )
         )
         if t_c >= VALID_RANGE_C[1]:
             break
@@ -47,10 +54,11 @@ def main() -> None:
     lines = [
         f"# source: {SOURCE}",
         f"# derived from data/raw/{RAW.name} by scripts/{Path(__file__).name}",
-        "# temperature_c = (degF - 32) * 5/9; kinematic_viscosity_m2s = cSt * 1e-6",
-        "temperature_c,density_kgm3,kinematic_viscosity_m2s",
+        "# temperature_c = (degF - 32) * 5/9; kinematic_viscosity_m2s = cSt * 1e-6;",
+        "# vapor_pressure_kpa = psia * 6.894757 (exact psi definition, wdtk.units.PSI_PA)",
+        "temperature_c,density_kgm3,kinematic_viscosity_m2s,vapor_pressure_kpa",
     ]
-    lines += [f"{t!r},{rho},{nu}" for t, rho, nu in out_rows]
+    lines += [f"{t!r},{rho},{nu},{pv!r}" for t, rho, nu, pv in out_rows]
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"Wrote {len(out_rows)} rows to {OUT.relative_to(ROOT)}")

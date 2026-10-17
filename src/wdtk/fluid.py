@@ -31,7 +31,7 @@ F = TypeVar("F", float, NDArray[np.float64])
 VALID_RANGE_C: tuple[float, float] = (0.0, 40.0)
 """Intended temperature range of the property functions, degC."""
 
-_COLUMNS = ("temperature_c", "density_kgm3", "kinematic_viscosity_m2s")
+_COLUMNS = ("temperature_c", "density_kgm3", "kinematic_viscosity_m2s", "vapor_pressure_kpa")
 _SOURCE_PREFIX = "# source:"
 _MIN_POINTS = 4
 
@@ -48,6 +48,8 @@ class PropertyTable:
         Density at each temperature, kg/m^3.
     kinematic_viscosity_m2s : ndarray
         Kinematic viscosity at each temperature, m^2/s.
+    vapor_pressure_kpa : ndarray
+        Saturation vapor pressure (absolute) at each temperature, kPa.
     source : str
         Citation for the tabulated values.
     """
@@ -55,6 +57,7 @@ class PropertyTable:
     temperature_c: NDArray[np.float64]
     density_kgm3: NDArray[np.float64]
     kinematic_viscosity_m2s: NDArray[np.float64]
+    vapor_pressure_kpa: NDArray[np.float64]
     source: str
 
 
@@ -64,6 +67,7 @@ class _Interpolants:
     t_max_c: float
     density: CubicSpline
     kinematic_viscosity: CubicSpline
+    vapor_pressure: CubicSpline
 
 
 def parse_property_table(text: str) -> PropertyTable:
@@ -71,7 +75,8 @@ def parse_property_table(text: str) -> PropertyTable:
 
     Expected format: optional ``#`` comment lines (one of which should be
     ``# source: <citation>``), then a header row with the columns ``temperature_c``,
-    ``density_kgm3``, ``kinematic_viscosity_m2s``, then one row per temperature.
+    ``density_kgm3``, ``kinematic_viscosity_m2s``, ``vapor_pressure_kpa``, then one row per
+    temperature.
 
     Parameters
     ----------
@@ -121,6 +126,7 @@ def parse_property_table(text: str) -> PropertyTable:
         temperature_c=cols["temperature_c"],
         density_kgm3=cols["density_kgm3"],
         kinematic_viscosity_m2s=cols["kinematic_viscosity_m2s"],
+        vapor_pressure_kpa=cols["vapor_pressure_kpa"],
         source=source,
     )
 
@@ -164,6 +170,7 @@ def _build_interpolants(table: PropertyTable) -> _Interpolants:
         t_max_c=min(float(table.temperature_c[-1]), VALID_RANGE_C[1]),
         density=CubicSpline(table.temperature_c, table.density_kgm3),
         kinematic_viscosity=CubicSpline(table.temperature_c, table.kinematic_viscosity_m2s),
+        vapor_pressure=CubicSpline(table.temperature_c, table.vapor_pressure_kpa),
     )
 
 
@@ -263,6 +270,33 @@ def dynamic_viscosity_pas(temperature_c: F, table: PropertyTable | None = None) 
         If any temperature is outside the tabulated range or not finite.
     """
     return density_kgm3(temperature_c, table) * kinematic_viscosity_m2s(temperature_c, table)
+
+
+def vapor_pressure_kpa(temperature_c: F, table: PropertyTable | None = None) -> F:
+    """Saturation vapor pressure of water (absolute).
+
+    p_v(T) is a cubic-spline interpolant through tabulated values (see module docstring).
+    Used for net positive suction head: NPSHa includes -p_v / (rho g).
+
+    Parameters
+    ----------
+    temperature_c : float or ndarray
+        Water temperature, degC. Must lie within the table's range (intended 0 to 40).
+    table : PropertyTable, optional
+        Property table to interpolate. Defaults to the packaged table.
+
+    Returns
+    -------
+    float or ndarray
+        Vapor pressure, kPa absolute.
+
+    Raises
+    ------
+    ValueError
+        If any temperature is outside the tabulated range or not finite.
+    """
+    interp = _interpolants(table)
+    return _evaluate(interp.vapor_pressure, interp, temperature_c)
 
 
 def specific_weight_nm3(

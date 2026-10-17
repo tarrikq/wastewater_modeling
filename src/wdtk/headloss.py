@@ -22,16 +22,18 @@ from __future__ import annotations
 
 import math
 from collections.abc import Callable, Sequence
-from typing import Literal, TypeVar, cast
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import brentq
 
+from wdtk._arrays import F, FloatOrArray
+from wdtk._arrays import like as _like
+from wdtk._arrays import require_nonnegative as _require_nonnegative
+from wdtk._arrays import require_positive as _require_positive
 from wdtk.units import FT_M, G_STANDARD_MS2
 
-F = TypeVar("F", float, NDArray[np.float64])
-FloatOrArray = float | NDArray[np.float64]
 TurbulentMethod = Literal["colebrook", "swamee-jain"]
 
 # --- Hazen-Williams constants ----------------------------------------------------------------
@@ -71,30 +73,6 @@ _COLEBROOK_X_BRACKET = (1e-6, 1e3)  # x = 1/sqrt(f); contains every root when ep
 
 
 # --- Helpers ---------------------------------------------------------------------------------
-def _like(template: F, value: NDArray[np.float64] | float, name: str) -> F:
-    """Return ``value`` with the type and shape of ``template``."""
-    arr = np.asarray(value, dtype=np.float64)
-    if arr.shape != np.shape(template):
-        raise ValueError(
-            f"Arguments broadcast to shape {arr.shape}, larger than {name} shape "
-            f"{np.shape(template)}; pass {name} as an array of the full shape."
-        )
-    result: float | NDArray[np.float64] = float(arr) if arr.ndim == 0 else arr
-    return cast(F, result)
-
-
-def _require_positive(name: str, value: FloatOrArray) -> None:
-    arr = np.asarray(value, dtype=np.float64)
-    if np.any(~np.isfinite(arr)) or np.any(arr <= 0.0):
-        raise ValueError(f"{name} must be finite and positive; got {value!r}.")
-
-
-def _require_nonnegative(name: str, value: FloatOrArray) -> None:
-    arr = np.asarray(value, dtype=np.float64)
-    if np.any(~np.isfinite(arr)) or np.any(arr < 0.0):
-        raise ValueError(f"{name} must be finite and non-negative; got {value!r}.")
-
-
 def _solve_positive(func: Callable[[float], float], target: float, x0: float) -> float:
     """Solve ``func(x) = target`` for x > 0, where func is positive and monotonic in x.
 
