@@ -44,14 +44,19 @@ strict = true
 files = ["src"]
 python_version = "3.11"
 
-# scipy ships without type information; scipy-stubs would be an extra dependency.
+# scipy and networkx ship without type information; stub packages would be extra dependencies.
 [[tool.mypy.overrides]]
-module = ["scipy", "scipy.*"]
+module = ["scipy", "scipy.*", "networkx", "networkx.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=wdtk --cov-report=term-missing"
+filterwarnings = [
+    # WNTR reads [OPTIONS] before [PIPES], so D-W roughness units are converted correctly;
+    # the warning fires only when the headloss option changes on an empty model.
+    "ignore:Changing the headloss formula from H-W to D-W:UserWarning",
+]
 
 [tool.coverage.report]
 fail_under = 90

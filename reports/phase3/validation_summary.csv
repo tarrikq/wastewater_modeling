@@ -1,0 +1,6 @@
+network,max_abs_head_diff_m,max_abs_flow_diff_Ls,max_rel_flow_diff,gga_iterations,hardy_cross_sweeps
+single_loop_hw,5.94e-05,2.82e-06,6.90e-08,5,5
+two_loop_hw,1.39e-04,1.10e-05,1.26e-07,4,19
+net1_steady_hw,9.88e-05,2.16e-05,3.86e-07,5,
+single_loop_dw,4.48e-05,7.66e-06,1.45e-07,7,7
+two_loop_dw,1.02e-04,8.33e-06,2.01e-07,5,21

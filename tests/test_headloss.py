@@ -282,3 +282,40 @@ def test_array_arguments_broadcast_to_first_argument() -> None:
 def test_invalid_inputs_raise(call: object) -> None:
     with pytest.raises(ValueError):
         call()  # type: ignore[operator]
+
+
+# --- EPANET convention -----------------------------------------------------------------------
+
+
+def test_epanet_convention_matches_resistance_form() -> None:
+    q, length, d, c = 0.08, 750.0, 0.25, 115.0
+    expected = 10.666829500036352 * c**-1.852 * d**-4.871 * length * q**1.852
+    assert hl.hazen_williams_headloss_m(q, length, d, c, convention="epanet") == pytest.approx(
+        expected, rel=1e-14
+    )
+    assert hl.hazen_williams_headloss_m(-q, length, d, c, convention="epanet") == pytest.approx(
+        -expected, rel=1e-14
+    )
+
+
+@given(q=flows, d=diameters, length=lengths, c=c_factors)
+def test_resistance_reproduces_headloss_for_both_conventions(
+    q: float, d: float, length: float, c: float
+) -> None:
+    for conv in ("exact", "epanet"):
+        r, n = hl.hazen_williams_resistance(length, d, c, conv)  # type: ignore[arg-type]
+        h = hl.hazen_williams_headloss_m(q, length, d, c, convention=conv)  # type: ignore[arg-type]
+        assert r * q**n == pytest.approx(h, rel=1e-12)
+
+
+def test_conventions_differ_by_less_than_quarter_percent() -> None:
+    q = np.geomspace(1e-3, 2.0, 30)
+    d = np.geomspace(0.05, 1.5, 30)
+    exact = hl.hazen_williams_headloss_m(q, 1000.0, d, 120.0)
+    epanet = hl.hazen_williams_headloss_m(q, 1000.0, d, 120.0, convention="epanet")
+    assert np.all(np.abs(exact / epanet - 1.0) < 0.0025)
+
+
+def test_unknown_convention_raises() -> None:
+    with pytest.raises(ValueError):
+        hl.hazen_williams_resistance(100.0, 0.3, 120.0, "moody")  # type: ignore[arg-type]

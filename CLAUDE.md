@@ -38,3 +38,6 @@ uv run ruff check         # lint
 uv run ruff format        # format
 uv run mypy               # strict type check of src/
 ```
+
+Reproducible outputs come from `scripts/` (e.g. `build_test_networks.py`, then
+`phase3_validation.py`), which write to `data/networks/` and `reports/`.

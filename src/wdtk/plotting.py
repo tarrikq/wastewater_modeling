@@ -14,6 +14,7 @@ import numpy as np
 from matplotlib.axes import Axes
 
 from wdtk import pumps as pm
+from wdtk.network.results import SolveResult
 from wdtk.units import flow_from_m3s
 
 SURFACE = "#fcfcfb"
@@ -162,3 +163,30 @@ def plot_pump_system(
     ax.set_ylabel("Head H (m)")
     ax.legend(frameon=False, fontsize=8, loc="lower left")
     return points
+
+
+def plot_convergence(ax: Axes, results: Sequence[SolveResult], title: str = "") -> None:
+    """Plot solver convergence histories on a log scale.
+
+    The y-axis is EPANET's convergence measure, sum|dQ| / sum|Q| after each iteration (one
+    Newton step for GGA, one sweep over all loops for Hardy Cross), so solvers are compared on
+    the same quantity.
+
+    Parameters
+    ----------
+    ax : matplotlib Axes
+        Target axes.
+    results : sequence of SolveResult
+        One result per solver; series are colored by categorical slot in the given order.
+    title : str, optional
+        Axes title.
+    """
+    for res, color in zip(results, CATEGORICAL, strict=False):
+        it = [r.iteration for r in res.history]
+        rel = [max(r.relative_flow_change, 1e-17) for r in res.history]
+        ax.semilogy(it, rel, color=color, marker="o", ms=4, label=f"{res.method} ({len(it)})")
+    ax.set_xlabel("Iteration")
+    ax.set_ylabel("Relative flow change, sum|dQ| / sum|Q| (-)")
+    if title:
+        ax.set_title(title, fontsize=10, loc="left")
+    ax.legend(frameon=False, fontsize=8, title="Solver (iterations)", title_fontsize=8)

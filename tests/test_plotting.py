@@ -36,3 +36,17 @@ def test_ordinal_colors_rejects_out_of_range(n: int) -> None:
 def test_ordinal_colors_spans_ramp() -> None:
     colors = plotting.ordinal_colors(3)
     assert colors[0] == plotting.BLUE_RAMP[0] and colors[-1] == plotting.BLUE_RAMP[-1]
+
+
+def test_plot_convergence_draws_one_line_per_solver() -> None:
+    from pathlib import Path
+
+    from wdtk.network.gga import solve_gga
+    from wdtk.network.hardy_cross import solve_hardy_cross
+    from wdtk.network.io import read_inp
+
+    net = read_inp(Path(__file__).resolve().parents[1] / "data/networks/two_loop_hw.inp")
+    fig, ax = plt.subplots()
+    plotting.plot_convergence(ax, [solve_gga(net), solve_hardy_cross(net)], "two loop")
+    assert len(ax.get_lines()) == 2
+    plt.close(fig)

@@ -62,6 +62,39 @@ HW_FLOW_EXPONENT = 1.0 / HW_EXP_S
 HW_DIAMETER_EXPONENT = (2.0 + HW_EXP_R) / HW_EXP_S
 """Exponent m in h proportional to D^-m for Hazen-Williams (2.63/0.54, about 4.870)."""
 
+HWConvention = Literal["exact", "epanet"]
+"""Hazen-Williams constants: ``"exact"`` derives them from the defining velocity form;
+``"epanet"`` uses EPANET's rounded resistance-form constants (below)."""
+
+EPANET_HW_K_SI = 10.666829500036352
+"""EPANET Hazen-Williams resistance coefficient, SI: h = K C^-1.852 D^-4.871 L Q^1.852.
+
+Value as used by WNTR 1.5.0 to replicate EPANET (``wntr/sim/models/constants.py``,
+``hazen_williams_constants``). Differs from the exact derivation by about 0.03%.
+"""
+
+EPANET_HW_FLOW_EXPONENT = 1.852
+"""EPANET Hazen-Williams flow (and C) exponent (WNTR ``constants.py``)."""
+
+EPANET_HW_DIAMETER_EXPONENT = 4.871
+"""EPANET Hazen-Williams diameter exponent (WNTR ``constants.py``)."""
+
+EPANET_DW_GRAVITY_MS2 = 32.2 * FT_M
+"""Gravitational acceleration implied by EPANET's Darcy-Weisbach head loss, m/s^2.
+
+Identified empirically in this project (Phase 3 probe, ``tests/test_network_wntr.py``):
+EPANET 2.2's turbulent D-W results are reproduced to within 0.0005% (its single-precision
+output) by Swamee-Jain with g = 32.2 ft/s^2 and nu = ``EPANET_KINEMATIC_VISCOSITY_M2S``,
+over 5e3 <= Re <= 1.6e6 and 1e-5 <= eps/D <= 1e-2.
+"""
+
+EPANET_KINEMATIC_VISCOSITY_M2S = 1.1e-5 * FT_M**2
+"""Kinematic viscosity EPANET uses at its default relative viscosity of 1.0, m^2/s.
+
+1.1e-5 ft^2/s, identified empirically together with ``EPANET_DW_GRAVITY_MS2``. It is close
+to, but not the same as, the sourced 20 degC value from ``wdtk.fluid`` (about 1.0022e-6).
+"""
+
 # --- Darcy-Weisbach constants ----------------------------------------------------------------
 RE_LAMINAR_MAX = 2000.0
 """Upper Reynolds number of the laminar regime (Bombardelli and Garcia 2003)."""
@@ -191,8 +224,57 @@ def _hw_headloss(
     return _like(flow, np.sign(q) * slope * np.asarray(length), "flow")
 
 
+def hazen_williams_resistance(
+    length_m: F,
+    diameter_m: FloatOrArray,
+    c_factor: FloatOrArray,
+    convention: HWConvention = "exact",
+) -> tuple[F, float]:
+    """Hazen-Williams resistance coefficient r and flow exponent n, with h = r Q |Q|^(n-1).
+
+    * ``"exact"``: r = L / (k C (pi/4) D^2 (D/4)^0.63)^(1/0.54), n = 1/0.54, k = ``HW_K_SI``.
+    * ``"epanet"``: r = 10.6668 C^-1.852 D^-4.871 L, n = 1.852 (see ``EPANET_HW_K_SI``).
+
+    Parameters
+    ----------
+    length_m : float or ndarray
+        Pipe length, m. Must be positive.
+    diameter_m : float or ndarray
+        Internal diameter, m. Must be positive.
+    c_factor : float or ndarray
+        Hazen-Williams C, dimensionless. Must be positive.
+    convention : {"exact", "epanet"}, optional
+        Which constants to use (default ``"exact"``).
+
+    Returns
+    -------
+    tuple
+        (r, in m per (m^3/s)^n, same type and shape as ``length_m``; n, dimensionless).
+    """
+    _require_positive("length_m", length_m)
+    _require_positive("diameter_m", diameter_m)
+    _require_positive("c_factor", c_factor)
+    length = np.asarray(length_m, dtype=np.float64)
+    if convention == "exact":
+        r = length / _hw_conveyance(diameter_m, c_factor, HW_K_SI) ** HW_FLOW_EXPONENT
+        return _like(length_m, r, "length_m"), HW_FLOW_EXPONENT
+    if convention == "epanet":
+        r = (
+            EPANET_HW_K_SI
+            * np.asarray(c_factor, dtype=np.float64) ** -EPANET_HW_FLOW_EXPONENT
+            * np.asarray(diameter_m, dtype=np.float64) ** -EPANET_HW_DIAMETER_EXPONENT
+            * length
+        )
+        return _like(length_m, r, "length_m"), EPANET_HW_FLOW_EXPONENT
+    raise ValueError(f"Unknown Hazen-Williams convention {convention!r}.")
+
+
 def hazen_williams_headloss_m(
-    flow_m3s: F, length_m: FloatOrArray, diameter_m: FloatOrArray, c_factor: FloatOrArray
+    flow_m3s: F,
+    length_m: FloatOrArray,
+    diameter_m: FloatOrArray,
+    c_factor: FloatOrArray,
+    convention: HWConvention = "exact",
 ) -> F:
     """Friction head loss by Hazen-Williams, SI units.
 
@@ -200,7 +282,9 @@ def hazen_williams_headloss_m(
 
         h = L * (|Q| / (k C (pi D^2/4) (D/4)^0.63))^(1/0.54) * sign(Q),
 
-    i.e. h proportional to Q^1.852 / (C^1.852 D^4.870), with k = ``HW_K_SI``.
+    i.e. h proportional to Q^1.852 / (C^1.852 D^4.870), with k = ``HW_K_SI``. With
+    ``convention="epanet"`` the rounded EPANET form h = 10.6668 C^-1.852 D^-4.871 L Q^1.852 is
+    used instead (about 0.05 to 0.1% lower head loss at typical conditions).
 
     Parameters
     ----------
@@ -212,6 +296,8 @@ def hazen_williams_headloss_m(
         Internal diameter, m. Must be positive.
     c_factor : float or ndarray
         Hazen-Williams roughness coefficient C, dimensionless. Must be positive.
+    convention : {"exact", "epanet"}, optional
+        Which constants to use (default ``"exact"``); see :func:`hazen_williams_resistance`.
 
     Returns
     -------
@@ -223,7 +309,15 @@ def hazen_williams_headloss_m(
     Empirical formula, valid for water at ordinary temperatures in turbulent flow. It has
     no viscosity term, so it cannot represent laminar flow or other fluids.
     """
-    return _hw_headloss(flow_m3s, length_m, diameter_m, c_factor, HW_K_SI)
+    if convention == "exact":
+        return _hw_headloss(flow_m3s, length_m, diameter_m, c_factor, HW_K_SI)
+    q = np.asarray(flow_m3s, dtype=np.float64)
+    length = np.broadcast_to(
+        np.asarray(length_m, dtype=np.float64),
+        np.broadcast_shapes(q.shape, np.shape(length_m), np.shape(diameter_m), np.shape(c_factor)),
+    )
+    r, n = hazen_williams_resistance(np.array(length), diameter_m, c_factor, convention)
+    return _like(flow_m3s, r * q * np.abs(q) ** (n - 1.0), "flow_m3s")
 
 
 def hazen_williams_headloss_ft(

@@ -70,6 +70,10 @@ This is a stated convention, not a property value. With standard gravity it give
 FLOW_TO_M3S: dict[str, float] = {
     "m3/s": 1.0,
     "L/s": LPS_M3S,
+    "L/min": LPS_M3S / SECONDS_PER_MINUTE,
+    "m3/h": 1.0 / 3600.0,
+    "m3/d": 1.0 / SECONDS_PER_DAY,
+    "ML/d": 1.0e3 / SECONDS_PER_DAY,
     "gpm": GPM_M3S,
     "MGD": MGD_M3S,
     "cfs": CFS_M3S,
@@ -111,8 +115,8 @@ def flow_to_m3s(value: F, unit: str) -> F:
     value : float or ndarray
         Flow rate expressed in ``unit``.
     unit : str
-        One of ``"m3/s"``, ``"L/s"``, ``"gpm"`` (US gal/min), ``"MGD"`` (million US gal/day),
-        ``"cfs"`` (ft^3/s).
+        One of ``"m3/s"``, ``"L/s"``, ``"L/min"``, ``"m3/h"``, ``"m3/d"``, ``"ML/d"``,
+        ``"gpm"`` (US gal/min), ``"MGD"`` (million US gal/day), ``"cfs"`` (ft^3/s).
 
     Returns
     -------
