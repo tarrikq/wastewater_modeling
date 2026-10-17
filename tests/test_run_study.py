@@ -90,7 +90,6 @@ def test_end_to_end_smoke(tmp_path: Path) -> None:
         "4d_water_age",
         "4e_energy",
         "4f_criticality",
-        "runtime_s",
         "assumptions",
     }
     fire = pd.read_csv(out / "4b_fire_flow.csv")

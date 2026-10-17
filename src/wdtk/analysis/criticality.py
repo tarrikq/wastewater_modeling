@@ -119,7 +119,12 @@ def criticality_table(
                 "unserved_pct": 100.0 * max(unserved, 0.0) / base_volume,
                 "junctions_below_min": int((low & ~base_low).sum()),
             }
-    table = pd.DataFrame.from_dict(rows, orient="index")
+    columns = ["diameter_m", "length_m", "unserved_m3", "unserved_pct", "junctions_below_min"]
+    table = (
+        pd.DataFrame.from_dict(rows, orient="index", columns=columns)
+        if rows
+        else (pd.DataFrame(columns=columns))
+    )
     if len(table):
         table = table.sort_values(["unserved_m3", "junctions_below_min"], ascending=False)
     return table, excluded

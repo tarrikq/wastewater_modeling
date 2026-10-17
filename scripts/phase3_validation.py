@@ -17,7 +17,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import wntr
 
-from wdtk import plotting
+from wdtk import plotting, validation
 from wdtk.network.gga import solve_gga
 from wdtk.network.hardy_cross import solve_hardy_cross
 from wdtk.network.io import read_inp
@@ -40,13 +40,15 @@ def epanet(inp: Path, workdir: Path) -> tuple[dict[str, float], dict[str, float]
     return res.node["head"].loc[0].to_dict(), res.link["flowrate"].loc[0].to_dict()
 
 
-def main() -> None:
-    """Run the comparisons and write tables and the figure."""
-    OUT.mkdir(parents=True, exist_ok=True)
+def main(out_dir: Path | None = None, networks_dir: Path | None = None) -> list[Path]:
+    """Run the comparisons, write tables and the figure; return the written paths."""
+    out = out_dir or OUT
+    networks = networks_dir or NETWORKS
+    out.mkdir(parents=True, exist_ok=True)
     head_rows, flow_rows, summary = [], [], []
     with tempfile.TemporaryDirectory() as tmp:
         for name in NAMES:
-            inp = NETWORKS / f"{name}.inp"
+            inp = networks / f"{name}.inp"
             ours = solve_gga(read_inp(inp))
             heads, flows = epanet(inp, Path(tmp))
             max_dh = max_dq = max_dq_rel = 0.0
@@ -92,7 +94,7 @@ def main() -> None:
             )
 
     def write(fname: str, header: list[str], rows: list[list[object]]) -> None:
-        with (OUT / fname).open("w", newline="", encoding="utf-8") as f:
+        with (out / fname).open("w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
             w.writerow(header)
             w.writerows(rows)
@@ -140,7 +142,7 @@ def main() -> None:
         "two_loop_dw": "Two loop, Darcy-Weisbach",
     }
     for ax, name in zip(axes.flat, LOOPED, strict=True):
-        net = read_inp(NETWORKS / f"{name}.inp")
+        net = read_inp(networks / f"{name}.inp")
         results = [solve_gga(net, accuracy=1e-12), solve_hardy_cross(net, accuracy=1e-12)]
         plotting.plot_convergence(ax, results, titles[name])
     for ax in axes[0]:
@@ -154,8 +156,17 @@ def main() -> None:
         fontsize=10,
     )
     fig.tight_layout()
-    fig.savefig(OUT / "convergence.png")
-    print(f"Wrote tables and figure to {OUT.relative_to(ROOT)}")
+    fig.savefig(out / "convergence.png")
+    plt.close(fig)
+    print(f"Wrote tables and figure to {out}")
+    validation.dw_probe_table().to_csv(out / "epanet_dw_probe.csv", index=False)
+    names = [
+        "validation_heads.csv",
+        "validation_flows.csv",
+        "validation_summary.csv",
+        "epanet_dw_probe.csv",
+    ]
+    return [out / n for n in [*names, "convergence.png"]]
 
 
 if __name__ == "__main__":

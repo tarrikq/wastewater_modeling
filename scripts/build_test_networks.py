@@ -166,9 +166,11 @@ def net1_steady() -> Network:
     )
 
 
-def main() -> None:
-    """Write all test networks."""
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
+def main(out_dir: Path | None = None) -> list[Path]:
+    """Write all test networks; return the written paths."""
+    out = out_dir or OUT_DIR
+    out.mkdir(parents=True, exist_ok=True)
+    written = []
     builds = {
         "single_loop_hw": single_loop(),
         "single_loop_dw": _with_formula(single_loop(), "D-W"),
@@ -177,12 +179,14 @@ def main() -> None:
         "net1_steady_hw": net1_steady(),
     }
     for name, net in builds.items():
-        path = OUT_DIR / f"{name}.inp"
+        path = out / f"{name}.inp"
         write_inp(net, path, units="LPS")
+        written.append(path)
         print(
-            f"Wrote {path.relative_to(ROOT)}: {len(net.junctions)} junctions, "
+            f"Wrote {path}: {len(net.junctions)} junctions, "
             f"{len(net.pipes)} pipes, {len(net.pumps)} pumps"
         )
+    return written
 
 
 if __name__ == "__main__":

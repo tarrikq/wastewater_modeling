@@ -1,0 +1,3 @@
+[browser]
+# Do not send usage statistics from clones of this repository.
+gatherUsageStats = false

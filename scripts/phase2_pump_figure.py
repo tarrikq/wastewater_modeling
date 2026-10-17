@@ -9,7 +9,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from wdtk import plotting
+from wdtk import plotting, validation
 from wdtk import pumps as pm
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,8 +20,9 @@ SHUTOFF_HEAD_M, DESIGN_FLOW_M3S, DESIGN_HEAD_M, MAX_FLOW_M3S = 60.0, 0.10, 45.0,
 STATIC_HEAD_M, LENGTH_M, DIAMETER_M, C_FACTOR, MINOR_K = 20.0, 2000.0, 0.3, 120.0, 5.0
 
 
-def main() -> None:
-    """Build and save the figure."""
+def main(out_dir: Path | None = None) -> list[Path]:
+    """Build and save the figure; return the written path(s)."""
+    out = (out_dir or OUT.parent) / OUT.name
     plotting.apply_style()
     curve = pm.fit_three_point(SHUTOFF_HEAD_M, DESIGN_FLOW_M3S, DESIGN_HEAD_M, MAX_FLOW_M3S)
 
@@ -39,11 +40,16 @@ def main() -> None:
         loc="left",
     )
     fig.tight_layout()
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(OUT)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(out)
+    plt.close(fig)
     for q, h in points:
         print(f"Q = {q * 1000:7.2f} L/s, H = {h:6.2f} m")
-    print(f"Wrote {OUT.relative_to(ROOT)}")
+    print(f"Wrote {out}")
+    table = out.parent / "pump_validation_epanet.csv"
+    validation.pump_validation_table().round(4).to_csv(table, index=False)
+    print(f"Wrote {table}")
+    return [out, table]
 
 
 if __name__ == "__main__":

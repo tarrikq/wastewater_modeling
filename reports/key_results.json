@@ -1,0 +1,129 @@
+{
+  "phase3_validation": [
+    {
+      "network": "single_loop_hw",
+      "max_abs_head_diff_m": "5.94e-05",
+      "max_abs_flow_diff_Ls": "2.82e-06",
+      "max_rel_flow_diff": "6.90e-08",
+      "gga_iterations": "5",
+      "hardy_cross_sweeps": "5"
+    },
+    {
+      "network": "two_loop_hw",
+      "max_abs_head_diff_m": "1.39e-04",
+      "max_abs_flow_diff_Ls": "1.10e-05",
+      "max_rel_flow_diff": "1.26e-07",
+      "gga_iterations": "4",
+      "hardy_cross_sweeps": "19"
+    },
+    {
+      "network": "net1_steady_hw",
+      "max_abs_head_diff_m": "9.88e-05",
+      "max_abs_flow_diff_Ls": "2.16e-05",
+      "max_rel_flow_diff": "3.86e-07",
+      "gga_iterations": "5",
+      "hardy_cross_sweeps": ""
+    },
+    {
+      "network": "single_loop_dw",
+      "max_abs_head_diff_m": "4.48e-05",
+      "max_abs_flow_diff_Ls": "7.66e-06",
+      "max_rel_flow_diff": "1.45e-07",
+      "gga_iterations": "7",
+      "hardy_cross_sweeps": "7"
+    },
+    {
+      "network": "two_loop_dw",
+      "max_abs_head_diff_m": "1.02e-04",
+      "max_abs_flow_diff_Ls": "8.33e-06",
+      "max_rel_flow_diff": "2.01e-07",
+      "gga_iterations": "5",
+      "hardy_cross_sweeps": "21"
+    }
+  ],
+  "phase4": {
+    "4a_baseline": {
+      "junctions_checked_min": 59,
+      "junctions_below_min": 0,
+      "junctions_above_max": 0,
+      "pipes_above_max_velocity": 3,
+      "lowest_service_pressure_psi": 38.7,
+      "highest_pressure_psi": 75.5,
+      "highest_velocity_fps": 9.37,
+      "peak_hour_h": 23.0
+    },
+    "4b_fire_flow": {
+      "junctions_tested": 59,
+      "junctions_meeting_requirement": 57
+    },
+    "4c_sizing": {
+      "fire_deficient_before": 2,
+      "fire_deficient_after": 0,
+      "pipes_upsized": 2,
+      "total_cost_usd": 1189500.0,
+      "final_deficit_ft": 0.0,
+      "iterations": 6
+    },
+    "4d_water_age": {
+      "junctions_above_threshold_baseline": 20,
+      "junctions_above_threshold_alternative": 17,
+      "max_age_h_baseline": 161.4,
+      "max_age_h_alternative": 221.1,
+      "junctions_older_by_1h_or_more": 33,
+      "junctions_younger_by_1h_or_more": 25,
+      "tank_max_age_h": {
+        "baseline": {
+          "1": 122.0,
+          "2": 163.4,
+          "3": 139.0
+        },
+        "alternative": {
+          "1": 126.4,
+          "2": 230.4,
+          "3": 166.6
+        }
+      },
+      "age_stabilization": {
+        "baseline": 0.0256,
+        "alternative": 0.0474
+      }
+    },
+    "4e_energy": {
+      "baseline_cost_usd": 639.0,
+      "alternative_cost_usd": 923.89,
+      "saving_pct": -44.6,
+      "baseline_energy_kwh": 8490.0,
+      "alternative_energy_kwh": 8249.0,
+      "feasibility": {
+        "baseline": {
+          "junctions_below_min": 0,
+          "tank_hours_at_min_level": 0
+        },
+        "alternative": {
+          "junctions_below_min": 0,
+          "tank_hours_at_min_level": 0
+        }
+      },
+      "alternative_feasible": true,
+      "period_h": 72.0
+    },
+    "4f_criticality": {
+      "pipes_screened": 87,
+      "excluded_control_targets": [
+        "330"
+      ],
+      "top10": [
+        "233",
+        "193",
+        "229",
+        "189",
+        "247",
+        "249",
+        "137",
+        "251",
+        "257",
+        "263"
+      ]
+    }
+  }
+}

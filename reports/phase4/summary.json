@@ -82,14 +82,6 @@
       "263"
     ]
   },
-  "runtime_s": {
-    "4a_baseline": 0.3,
-    "4b_fire_flow": 0.3,
-    "4c_sizing": 0.5,
-    "4d_water_age": 0.3,
-    "4e_energy": 0.1,
-    "4f_criticality": 0.4
-  },
   "assumptions": {
     "service.min_pressure": {
       "value": 35,

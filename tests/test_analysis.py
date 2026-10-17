@@ -292,3 +292,10 @@ def test_closing_dead_end_main_loses_its_demand(toy: Any) -> None:
 
 def test_controlled_links(toy: Any) -> None:
     assert criticality.controlled_links(toy) == {"PU", "PB"}
+
+
+def test_criticality_with_no_pipe_above_threshold(toy: Any) -> None:
+    pda = copy.deepcopy(toy)
+    set_pressure_dependent(pda, PDD)
+    table, _ = criticality.criticality_table(pda, CriticalitySettings(5.0, 24 * HOUR), SERVICE)
+    assert table.empty and "unserved_pct" in table.columns

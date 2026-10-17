@@ -95,6 +95,37 @@ PRESSURE_TO_KPA: dict[str, float] = {
 }
 """Multiply a pressure in the keyed unit by this factor to get kPa."""
 
+HP_W = 550.0 * FT_M * LBF_N
+"""Mechanical horsepower (550 ft lbf/s), W (exact)."""
+
+POWER_TO_W: dict[str, float] = {"W": 1.0, "kW": 1.0e3, "hp": HP_W}
+"""Multiply a power in the keyed unit by this factor to get W."""
+
+
+def power_from_w(power_w: F, unit: str) -> F:
+    """Convert a power from W.
+
+    P_unit = P_W / k_unit, where k_unit is ``POWER_TO_W[unit]`` (hp = 550 ft lbf/s).
+
+    Parameters
+    ----------
+    power_w : float or ndarray
+        Power, W.
+    unit : str
+        One of ``"W"``, ``"kW"``, ``"hp"``.
+
+    Returns
+    -------
+    float or ndarray
+        Power expressed in ``unit``.
+
+    Raises
+    ------
+    ValueError
+        If ``unit`` is not recognized.
+    """
+    return power_w / _factor(POWER_TO_W, unit, "power")
+
 
 def _factor(table: dict[str, float], unit: str, quantity: str) -> float:
     """Look up a conversion factor, failing loudly on an unknown unit."""

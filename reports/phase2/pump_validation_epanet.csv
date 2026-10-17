@@ -1,0 +1,5 @@
+case,flow_wdtk_Ls,flow_epanet_Ls,flow_diff_pct,head_wdtk_m,head_epanet_m,head_diff_pct
+single-point curve,108.0417,108.0566,-0.0138,47.2117,47.2063,0.0114
+three-point curve,100.1577,100.1738,-0.016,44.9584,44.9541,0.0094
+"three-point, speed 0.9",77.3987,77.4119,-0.0171,39.2804,39.2776,0.0071
+"three-point, speed 0.8",50.2217,50.2311,-0.0188,34.1659,34.1645,0.0041

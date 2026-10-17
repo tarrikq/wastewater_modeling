@@ -495,7 +495,6 @@ def main(argv: list[str] | None = None) -> int:
     summary["4d_water_age"] = step("4d_water_age", age, wn, a, args.out)
     summary["4e_energy"] = step("4e_energy", pump_energy, wn, a, args.out, base)
     summary["4f_criticality"] = step("4f_criticality", critical_pipes, wn, a, args.out)
-    summary["runtime_s"] = timings
     summary["assumptions"] = {
         k: {"value": e.value, "units": e.units, "status": e.status} for k, e in a.entries.items()
     }

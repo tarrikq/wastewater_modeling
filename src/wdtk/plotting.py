@@ -17,8 +17,10 @@ from matplotlib.axes import Axes
 from matplotlib.cm import ScalarMappable
 from matplotlib.collections import LineCollection
 from matplotlib.colors import LinearSegmentedColormap
+from numpy.typing import NDArray
 
 from wdtk import pumps as pm
+from wdtk.headloss_comparison import RatioGrid
 from wdtk.network.results import SolveResult
 from wdtk.units import flow_from_m3s
 
@@ -331,3 +333,95 @@ def network_map(
     ax.grid(False)
     for spine in ax.spines.values():
         spine.set_visible(False)
+
+
+# --- Phase 1: Hazen-Williams vs Darcy-Weisbach ---------------------------------------------------
+DIVERGING = ("#184f95", "#86b6ef", "#f0efec", "#ef9a99", "#a82e2e")
+"""Diverging ramp (blue - neutral gray - red) for ratios centred on 1."""
+
+
+def plot_hw_dw_ratio(
+    ax: Axes, grid: RatioGrid, calibration: tuple[float, float], subtitle: str = ""
+) -> None:
+    """Map of h_HW / h_DW over diameter and velocity, centred on agreement (ratio 1).
+
+    Parameters
+    ----------
+    ax : matplotlib Axes
+        Target axes.
+    grid : RatioGrid
+        Output of :func:`wdtk.headloss_comparison.ratio_grid`.
+    calibration : tuple of float
+        (diameter m, velocity m/s) of the calibration point, marked on the map.
+    subtitle : str, optional
+        Second title line (inputs).
+    """
+    from matplotlib.colors import TwoSlopeNorm
+
+    d_mm, v = np.meshgrid(grid.diameter_m * 1000.0, grid.velocity_ms)
+    ratio = grid.ratio
+    r_lo, r_hi = float(np.min(ratio)), float(np.max(ratio))
+    span = max(1.0 - r_lo, r_hi - 1.0)
+    norm = TwoSlopeNorm(vcenter=1.0, vmin=1.0 - span, vmax=1.0 + span)
+    cmap = LinearSegmentedColormap.from_list("div", DIVERGING)
+    mesh = ax.pcolormesh(d_mm, v, ratio, cmap=cmap, norm=norm, shading="gouraud", rasterized=True)
+    levels = [lv for lv in (0.8, 0.85, 0.9, 0.95, 1.0, 1.05, 1.1, 1.15, 1.2) if r_lo < lv < r_hi]
+    cs = ax.contour(d_mm, v, ratio, levels=levels, colors=INK_SECONDARY, linewidths=0.8)
+    # The 1.00 contour passes through the calibration marker; the annotation names it.
+    ax.clabel(cs, levels=[lv for lv in levels if lv != 1.0], fmt="%.2f", fontsize=8)
+    d_ref, v_ref = calibration
+    ax.plot(d_ref * 1000.0, v_ref, marker="o", ms=8, mfc=INK, mec=SURFACE, mew=2)
+    ax.annotate(
+        "calibration point\n(ratio = 1.00 contour)",
+        (d_ref * 1000.0, v_ref),
+        xytext=(10, -26),
+        textcoords="offset points",
+        fontsize=9,
+        color=INK,
+    )
+    ax.set_xscale("log")
+    ticks = [50, 100, 200, 300, 600, 1200]
+    ax.set_xticks(ticks, labels=[str(t) for t in ticks])
+    ax.set_xlabel("Internal diameter D (mm)")
+    ax.set_ylabel("Mean velocity V (m/s)")
+    title = "Hazen-Williams / Darcy-Weisbach head loss ratio"
+    ax.set_title(f"{title}\n{subtitle}" if subtitle else title, fontsize=10, loc="left")
+    ax.grid(False)
+    cb = ax.figure.colorbar(mesh, ax=ax, pad=0.02)
+    cb.set_label("h_HW / h_DW (dimensionless)")
+    cb.outline.set_edgecolor(MUTED)
+
+
+def plot_equivalent_c(
+    axes: Sequence[Axes],
+    velocity_ms: NDArray[np.float64],
+    panels: Sequence[tuple[str, Mapping[str, NDArray[np.float64]]]],
+) -> None:
+    """Equivalent Hazen-Williams C versus velocity, one panel per comparison.
+
+    Parameters
+    ----------
+    axes : sequence of Axes
+        One axes per panel (y shared by the caller if desired).
+    velocity_ms : ndarray
+        Velocities, m/s.
+    panels : sequence of (title, {series label: C values})
+        Up to three series per panel, colored by categorical slot and labeled directly.
+    """
+    for ax, (title, series) in zip(axes, panels, strict=True):
+        for color, (label, c) in zip(CATEGORICAL, series.items(), strict=False):
+            ax.plot(velocity_ms, c, color=color, label=label)
+            ax.annotate(
+                label,
+                (velocity_ms[-1], c[-1]),
+                xytext=(4, 0),
+                textcoords="offset points",
+                va="center",
+                fontsize=8,
+                color=INK_SECONDARY,
+            )
+        ax.set_title(title, fontsize=10, loc="left")
+        ax.set_xlabel("Mean velocity V (m/s)")
+        ax.set_xlim(float(velocity_ms[0]), float(velocity_ms[-1]) * 1.37)
+        ax.legend(frameon=False, fontsize=8, loc="best")  # least overlap with the lines
+    axes[0].set_ylabel("Equivalent Hazen-Williams C (dimensionless)")

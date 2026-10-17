@@ -139,3 +139,12 @@ def test_nonpositive_density_raises(bad: float) -> None:
         units.head_m_to_pressure_kpa(1.0, density_kgm3=bad)
     with pytest.raises(ValueError, match="g_ms2"):
         units.pressure_kpa_to_head_m(1.0, g_ms2=bad)
+
+
+def test_horsepower_definition() -> None:
+    # 1 hp = 550 ft lbf/s, all exact definitions
+    expected_w = 550.0 * 0.3048 * 0.45359237 * 9.80665
+    assert close(units.power_from_w(expected_w, "hp"), 1.0)
+    assert close(units.power_from_w(1500.0, "kW"), 1.5)
+    with pytest.raises(ValueError, match="Unknown"):
+        units.power_from_w(1.0, "BTU/h")
