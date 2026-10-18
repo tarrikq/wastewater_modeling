@@ -77,6 +77,148 @@ All 68 heads and flows pass with large margins. Hardy Cross converges to the sam
 
 ![Convergence of GGA and Hardy Cross](reports/phase3/convergence.png)
 
+### Phase 3: methods and test comparisons
+
+#### Network model and sign convention
+
+The model contains junctions with specified demands, reservoirs with fixed hydraulic heads,
+and links. Elevation is used to report pressure head after solving: pressure head is junction
+hydraulic head $H$ minus elevation $z$. Each link has a start and an end. Positive flow is from
+start to end, and its signed head drop is $h_k(Q_k)=H_{start}-H_{end}$. A pump is represented
+as a negative head drop, or head gain.
+
+At each junction, inflow minus outflow must equal demand. The network equations are
+
+$$
+F_1(Q,H)=h(Q)+A_{12}H+A_{10}H_0=0,\qquad
+F_2(Q)=A_{21}Q-q=0,\qquad A_{21}=A_{12}^{T}.
+$$
+
+$F_1$ contains one energy balance per link; $F_2$ contains one continuity balance per
+junction. $H_0$ is the vector of known reservoir heads. The incidence matrices encode which
+end of each oriented link touches a node, so the chosen orientation is bookkeeping: reversing
+a flow changes its sign, not the physical result. The link relationship $h_k(Q_k)$ is provided
+by the selected pipe head-loss formula, its minor-loss term, or the pump curve. To compare
+solvers fairly, they must use the same network and hydraulic conventions.
+
+#### Global gradient algorithm
+
+GGA solves for all link flows and junction heads together. It applies Newton's method to both
+sets of residuals. Let $D$ be diagonal, with entries $dh_k/dQ_k$, the local slope of each
+link's head-loss curve. The Newton equations couple flow corrections $\Delta Q$ and head
+corrections $\Delta H$:
+
+$$
+\begin{bmatrix}D&A_{12}\\A_{21}&0\end{bmatrix}
+\begin{bmatrix}\Delta Q\\\Delta H\end{bmatrix}
+=-\begin{bmatrix}F_1\\F_2\end{bmatrix}.
+$$
+
+Instead of solving this larger block system directly, the implementation eliminates
+$\Delta Q$ and solves the sparse junction-head system:
+
+$$
+(A_{21}D^{-1}A_{12})\Delta H=F_2-A_{21}D^{-1}F_1,\qquad
+\Delta Q=-D^{-1}(F_1+A_{12}\Delta H).
+$$
+
+The iteration is: estimate starting flows and heads; evaluate link losses, slopes, and both
+residuals; solve for head corrections; calculate the associated flow corrections; then update
+and repeat. It stops when $\sum_k|\Delta Q_k|/\sum_k|Q_k|$ is below the requested tolerance.
+Because continuity is linear in flow, the Newton correction removes the continuity residual
+in one update; later iterations mainly reduce the nonlinear energy residual. Both residuals
+are recorded so convergence can be inspected independently of the stopping test.
+
+Near zero flow, a small floor is applied when evaluating derivatives to prevent an unusable
+slope; the head-loss residual still uses the actual flow. For Darcy-Weisbach, the friction
+factor is held fixed while differentiating head loss. This quasi-Newton simplification changes
+the iteration path but not the target equations; it is why the tested D-W networks converge
+more slowly than the H-W networks.
+
+#### Hardy Cross loop corrections
+
+Hardy Cross uses a different set of unknowns. It starts with flows that satisfy continuity,
+then adjusts flow around independent loops until the energy drops around each loop balance. A
+loop correction adds flow to some links and subtracts it from others. Since the circulation
+enters and leaves every visited junction, the correction does not change any junction's net
+flow.
+
+For a loop with traversal sign $s_k=+1$ when traversal follows the link direction and $-1$
+otherwise, its head imbalance is $r_L=\sum_{k\in L}s_kh_k(Q_k)$. Linearizing the link losses
+gives
+
+$$
+\Delta Q_L=-\frac{r_L}{\sum_{k\in L}dh_k/dQ_k},\qquad
+Q_k\leftarrow Q_k+s_k\Delta Q_L.
+$$
+
+The implementation applies loop corrections sequentially (Gauss-Seidel order), so later loops
+in a sweep use the flows already updated by earlier loops. Its initial continuity-satisfying
+flow is routed along a spanning tree; non-tree links start at zero. For cycle detection,
+reservoirs are merged into a virtual node. A path between reservoirs becomes a pseudo-loop with
+an energy balance that includes the difference in fixed reservoir heads.
+
+This is deliberately a teaching implementation: it handles pipe-only networks, not pumps or a
+pipe directly joining two reservoirs. Net1 includes a pump, so it is solved by GGA and EPANET,
+but not by Hardy Cross.
+
+#### What each test comparison tells us
+
+**Closed-form cases check basic hydraulics.** In the series-pipe case, two fixed reservoir
+heads provide a known head difference and the two pipes carry the same flow. The calculated
+flow is checked against Hazen-Williams capacity using the combined pipe length. The junction
+head is checked against the upstream reservoir head minus the first pipe's loss. Both solvers
+are tested on this case, checking link orientation, units, and energy balance without using a
+second network solver as the reference.
+
+The minor-loss case adds a $K$ coefficient and checks that pipe friction plus
+$h_m=K V^2/(2g)$ consumes the available head. The parallel-pipe case checks that branch flows
+sum to the junction demand and that both branches have the same head drop between their shared
+endpoints. The expected flow ratio follows from the Hazen-Williams power relationship. These
+small tests isolate specific behaviors that are harder to diagnose in a large network.
+
+**Residual tests check the equations directly.** For all five network files, GGA is checked
+for both continuity and energy residuals after convergence. The cases are a single loop, a
+two-loop grid, and reduced Net1 using Hazen-Williams, plus the two loop networks using
+Darcy-Weisbach. This establishes that the returned result solves the implemented equations;
+it does not, by itself, establish that the equations or constants match EPANET.
+
+**The pump case checks pump integration.** A separate small network places a pump between two
+reservoirs and connects its discharge to the second reservoir through a pipe. GGA's pump flow
+and head gain are compared with the Phase 2 scalar operating point, where pump head equals
+system head. This checks that the pump curve participates correctly in the network energy
+equations; it is not the Net1 validation. A reverse-flow case checks that an unsupported pump
+condition fails explicitly, and a deliberately too-small iteration limit checks that
+nonconvergence is reported instead of returning a result as if it were valid.
+
+**Hardy Cross versus GGA compares two solution routes.** On the four pipe-only loop networks,
+flows are compared within $10^{-9}\ \mathrm{m^3/s}$ and heads within $10^{-6}\ \mathrm{m}$.
+The test also checks Hardy Cross's continuity residual during iteration. Agreement is useful
+because the methods iterate differently, but they share hydraulic functions and the network
+data model, so this is not an independent validation of those shared components.
+
+**EPANET comparisons provide an external reference.** The wdtk reader and WNTR load the same
+`.inp` input for each network. EPANET is run in steady-state, demand-driven mode, with hydraulic
+accuracy tightened to $10^{-6}$. Every junction head and every link flow is compared. The
+acceptance limits are a maximum head difference of $0.01$ m and a flow difference no greater
+than the larger of 0.1% of the EPANET flow or $0.001$ L/s. The absolute flow floor prevents a
+near-zero reference flow from producing a misleadingly large relative error.
+
+The single-loop and two-loop files are illustrative networks designed for this project; their
+H-W and D-W versions share the same layouts. `net1_steady_hw.inp` is based on Net1 bundled with
+WNTR. To make it a steady-state comparison, Tank 2 is replaced by a reservoir at its initial
+head, demands are set to base demands, and patterns, controls, rules, and time settings are
+removed. Pump 9 and its curve remain. It is therefore a network-solver comparison on a
+controlled steady-state reduction, not a reproduction of Net1's full operating schedule. The
+table reports maximum absolute differences across the compared nodes and links. The small
+differences establish close agreement for these networks and conventions, not every possible
+network or extended-period condition.
+
+The iteration and sweep counts in the table compare convergence behavior, not elapsed runtime:
+one GGA iteration solves a sparse linear system, while one Hardy Cross sweep visits each loop.
+On these networks GGA needed 4–7 iterations and Hardy Cross 5–21 sweeps. This illustrates the
+different convergence behavior; it is not a general performance benchmark.
+
 **EPANET's Darcy-Weisbach, identified by experiment.** The EPANET source isn't available in this environment, so its Darcy-Weisbach behavior was measured with single-pipe runs ([`reports/phase3/epanet_dw_probe.csv`](reports/phase3/epanet_dw_probe.csv)). EPANET reproduces as Swamee-Jain with ν = 1.1×10⁻⁵ ft²/s and g = 32.2 ft/s² to within 0.0006%, its single-precision output, over Re 5×10³–1.6×10⁶ and ε/D 10⁻⁵–10⁻². In the transitional zone (Re 2,000–4,000), EPANET uses a different interpolation than this project, and the two differ by several percent; all Darcy-Weisbach test networks were kept turbulent.
 
 ## 4. Design study results: EPANET Net3
