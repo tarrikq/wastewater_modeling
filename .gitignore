@@ -25,3 +25,6 @@ htmlcov/
 .idea/
 Thumbs.db
 .DS_Store
+
+CLAUDE.md
+PLAN.md

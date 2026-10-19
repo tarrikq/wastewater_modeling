@@ -10,11 +10,11 @@ Internal calculations use SI units; reports use US customary units. All conversi
 
 **Hazen-Williams.** The defining velocity form, with the constants verified against Bombardelli and García (2003), is
 
-$$V = k\,C\,R^{0.63}S^{0.54},\qquad k = 1.318\ \text{(ft-s)},\quad k_{SI} = 1.318\cdot0.3048^{0.37} = 0.8492 .$$
+$$V = k \cdot C \cdot R^{0.63} \cdot S^{0.54},\qquad k = 1.318\ \text{(ft-s)},\quad k_{SI} = 1.318\cdot0.3048^{0.37} = 0.8492 .$$
 
-With $R = D/4$ and $S = h_f/L$, this gives $h_f = 10.67\,L\,Q^{1.852}/(C^{1.852}D^{4.870})$ in SI. EPANET rounds the constants to $10.6668\,C^{-1.852}D^{-4.871}LQ^{1.852}$, which gives 0.05–0.10% less head loss. Both forms are implemented (`convention="exact"` or `"epanet"`). The network solver uses the EPANET form so the two can be compared directly.
+With $R = D/4$ and $S = h_f/L$, this gives $h_f = \frac{10.67 \cdot L \cdot Q^{1.852}}{C^{1.852} \cdot D^{4.870}}$ in SI. EPANET rounds the constants to $10.6668 \cdot C^{-1.852} \cdot D^{-4.871} \cdot L \cdot Q^{1.852}$, which gives 0.05–0.10% less head loss. Both forms are implemented (`convention="exact"` or `"epanet"`). The network solver uses the EPANET form so the two can be compared directly.
 
-**Darcy-Weisbach.** $h_f = f\,\frac{L}{D}\,\frac{V\lvert V\rvert}{2g}$ with:
+**Darcy-Weisbach.** $h_f = f \cdot \left(\frac{L}{D}\right) \cdot \left(\frac{V\lvert V\rvert}{2g}\right)$ with:
 - laminar flow, $f = 64/\mathrm{Re}$, for Re ≤ 2,000;
 - Colebrook-White, $1/\sqrt f = -2\log_{10}\!\big(\tfrac{\varepsilon/D}{3.7} + \tfrac{2.51}{\mathrm{Re}\sqrt f}\big)$, solved with Brent's method, or Swamee-Jain, $f = 0.25/\log_{10}^2\!\big(\tfrac{\varepsilon/D}{3.7} + \tfrac{5.74}{\mathrm{Re}^{0.9}}\big)$, for Re ≥ 4,000;
 - linear interpolation between those limits. That interpolation is a stated modeling assumption, not physics.
@@ -43,7 +43,7 @@ The derivation is worked through in [`notebooks/02_gga_formulation.ipynb`](noteb
 **Pipe hydraulics (Phase 1)** is checked by property-based tests:
 - Hazen-Williams SI and US forms agree to $10^{-12}$ after unit conversion.
 - Every inverse function returns its original input to $10^{-9}$: diameter for a target head loss, flow capacity for an available head, and back-calculated C.
-- Swamee-Jain stays within 2.83% of Colebrook over Re 5,000–$10^8$ and ε/D $10^{-6}$–$10^{-2}$. The worst case is the corner Re = 5,000, ε/D = 0.01, and only 7.6% of that range exceeds 1% ([`reports/phase1/swamee_jain_accuracy.csv`](reports/phase1/swamee_jain_accuracy.csv)).
+- Swamee-Jain stays within 2.83% of Colebrook over Re 5,000 to 10⁸ and ε/D 10⁻⁶ to 10⁻². The worst case is the corner Re = 5,000, ε/D = 0.01, and only 7.6% of that range exceeds 1% ([`reports/phase1/swamee_jain_accuracy.csv`](reports/phase1/swamee_jain_accuracy.csv)).
 
 With C fitted so the two formulas agree at 300 mm and 1 m/s, they diverge elsewhere. Hazen-Williams predicts 20% less head loss than Darcy-Weisbach for small, fast pipes and 10% more for large, slow ones. The C that would match Darcy-Weisbach varies with velocity, diameter and roughness, so C is not a constant of the pipe. That's why Darcy-Weisbach is the right choice outside the conditions where a C-factor was calibrated.
 
