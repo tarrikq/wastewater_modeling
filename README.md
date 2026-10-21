@@ -174,7 +174,7 @@ This regenerates every figure and table referenced above in a few seconds, plus 
 Other commands:
 
 ```
-uv run streamlit run app/streamlit_app.py   # interactive dashboard
+uv run streamlit run app/streamlit_app.py   # project overview and interactive dashboard
 uv run pytest                               # 255 tests, coverage report
 uv run ruff check; uv run mypy              # lint and strict type check
 ```

@@ -102,8 +102,15 @@ def test_results_on_network_without_large_pipes(tmp_path: Path) -> None:
 # --- Streamlit app (headless) ----------------------------------------------------------------
 
 
+def test_app_overview_page() -> None:
+    at = AppTest.from_file(str(ROOT / "app" / "streamlit_app.py"), default_timeout=60).run()
+    assert not at.exception
+    assert at.markdown  # the README is the default page
+
+
 def test_app_runs_every_tab_and_network() -> None:
     at = AppTest.from_file(str(ROOT / "app" / "streamlit_app.py"), default_timeout=180).run()
+    at.switch_page("views/dashboard.py").run()
     assert not at.exception
     assert len(at.tabs) == 4
     for layer in at.radio(key="layer").options:
