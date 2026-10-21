@@ -21,8 +21,11 @@ def test_relative_links_point_at_github() -> None:
     )
 
 
-def test_blocks_split_images_and_drop_banner() -> None:
-    text = f"# T\n\n{readme.APP_BANNER}(x)**\n\nIntro\n![Fig](a.png)\n![Fig 2](b.png)\nEnd"
+def test_blocks_split_images_and_drop_banner_and_setup() -> None:
+    text = (
+        f"# T\n\n{readme.APP_BANNER}(x)**\n\nIntro\n![Fig](a.png)\n![Fig 2](b.png)\nEnd\n"
+        "## 6. How to run\nuv sync"
+    )
     assert readme.blocks(text) == [
         readme.Block("markdown", "# T\n\n\nIntro"),
         readme.Block("image", "a.png", "Fig"),
@@ -39,3 +42,5 @@ def test_repository_readme_renders() -> None:
     markdown = "\n".join(b.body for b in blocks if b.kind == "markdown")
     assert readme.APP_BANNER not in markdown
     assert "](data/" not in markdown and "](reports/" not in markdown
+    assert "## 5. Assumptions" in markdown
+    assert "How to run" not in markdown and "uv sync" not in markdown

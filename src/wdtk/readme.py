@@ -13,6 +13,8 @@ REPO_URL = "https://github.com/tarrikq/water_distribution_modelling"
 BRANCH = "master"
 # The README's banner linking to the hosted app; redundant inside the app itself.
 APP_BANNER = "**[Open the live dashboard]"
+# The README's setup instructions and everything after them are for people with the repository.
+_STOP_HEADING = re.compile(r"^##\s.*How to run\s*$")
 
 _IMAGE_LINE = re.compile(r"^!\[(?P<alt>[^\]]*)\]\((?P<path>[^)\s]+)\)\s*$")
 _LINK = re.compile(r"(?<!!)\[(?P<text>[^\]]*)\]\((?P<target>[^)\s]+)\)")
@@ -57,7 +59,10 @@ def escape_dollars(text: str) -> str:
 
 
 def blocks(text: str) -> list[Block]:
-    """Split README text at its image lines into Markdown and image blocks."""
+    """Split README text at its image lines into Markdown and image blocks.
+
+    Text from the "How to run" heading onward is dropped.
+    """
     out: list[Block] = []
     lines: list[str] = []
 
@@ -68,6 +73,8 @@ def blocks(text: str) -> list[Block]:
         lines.clear()
 
     for line in text.splitlines():
+        if _STOP_HEADING.match(line):
+            break
         if line.startswith(APP_BANNER):
             continue
         image = _IMAGE_LINE.match(line)
